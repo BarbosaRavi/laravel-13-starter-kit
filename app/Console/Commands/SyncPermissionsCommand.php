@@ -2,38 +2,42 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\UserTypeEnum;
 use Illuminate\Console\Command;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 class SyncPermissionsCommand extends Command
 {
-    protected $signature = 'permission:sync {--fresh : Delete existing roles and permissions before syncing}';
+    protected $signature = 'permission:sync {--fresh : Delete existing permissions before syncing}';
 
-    protected $description = 'Sync roles and permissions from config';
+    protected $description = 'Sync permissions from config and assign all permissions to sys_admin';
 
     public function handle(): int
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
+        $permissionModel = config('permission.models.permission');
+        $roleModel = config('permission.models.role');
+
         if ($this->option('fresh')) {
-            Role::query()->delete();
-            Permission::query()->delete();
+            $permissionModel::query()->delete();
         }
 
         $permissions = config('permission_sync.permissions', []);
 
         foreach ($permissions as $permission) {
-            Permission::findOrCreate($permission);
+            $permissionModel::findOrCreate($permission);
         }
 
-        $sysAdminRole = Role::findOrCreate('sys_admin');
-        $sysAdminRole->syncPermissions(Permission::all());
+        $sysAdminRole = $roleModel::findOrCreate(UserTypeEnum::SYS_ADMIN->value);
+
+        $sysAdminRole->syncPermissions(
+            $permissionModel::query()->pluck('name')->all()
+        );
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        $this->info('Permissions and roles synced.');
+        $this->info('Permissions synced and assigned to sys_admin.');
 
         return self::SUCCESS;
     }

@@ -15,8 +15,6 @@ class AdminResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $media = $this->getFirstMedia('profile_pic');
-
         return [
             'id' => $this->id,
             'user' => new UserResource($this->whenLoaded('user')),

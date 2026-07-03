@@ -2,29 +2,15 @@
 
 return [
     'permissions' => [
-        'users.view',
-        'users.create',
-        'users.update',
-        'users.delete',
+        'users.view' => 'Visualizar usuário',
+        'user.destroy' => 'Destroi usuário',
+        'user.restore' => 'Restaura usuário',
 
-        'roles.view',
-        'roles.create',
-        'roles.update',
-        'roles.delete',
-    ],
+        'admin.view' => 'Visualizar administrador',
+        'admin.create' => 'Criar administrador',
+        'admin.update' => 'Atualizar administrador',
+        'admin.delete' => 'Deletar administrador',
 
-    'roles' => [
-        'sys_admin' => ['*'],
-
-        'admin' => [
-            'users.view',
-            'users.create',
-            'users.update',
-            'roles.view',
-        ],
-
-        'user' => [
-            'users.view',
-        ],
+        'roles.view' => 'Visualizar cargos',
     ],
 ];

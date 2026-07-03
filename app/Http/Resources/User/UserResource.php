@@ -15,8 +15,6 @@ class UserResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $media = $this->getFirstMedia('profile_pic');
-
         return [
             'id' => $this->id,
             'email' => $this->email,

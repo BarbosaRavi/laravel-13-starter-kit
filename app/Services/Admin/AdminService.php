@@ -17,8 +17,15 @@ class AdminService
         $page = $data['page'] ?? 1;
         $perPage = $data['per_page'] ?? 10;
         $search = $data['search'] ?? null;
+        $trashed = $data['trashed'] ?? null; 
 
         $query = Admin::query()
+            ->when($trashed, fn ($query) => $query
+                ->whereHas('user', fn ($query) => $query->withTrashed())
+                ->with(['user' => fn ($query) => $query->withTrashed()]),
+                fn ($query) => $query
+                    ->whereHas('user')
+                    ->with('user'))
             ->with('user')
             ->when($search, function ($query, string $search): void {
                 $query->whereHas('user', function ($query) use ($search): void {
@@ -31,6 +38,12 @@ class AdminService
             ->paginate($perPage, ['*'], 'page', $page);
 
         return new AdminCollection($query);
+    }
+
+    public function show(array $data): AdminResource
+    {
+        $admin = Admin::findOrFail($data['id']);
+        return new AdminResource($admin->load('user'));
     }
 
     public function store(array $data): AdminResource
@@ -60,7 +73,7 @@ class AdminService
         
             $admin->user->fill($updateData);
 
-            if ($admin->isDirty('email')) {
+            if ($admin->user->isDirty('email')) {
                 $exists = User::query()
                     ->where('email', $data['email'])
                     ->exists();
@@ -86,7 +99,8 @@ class AdminService
     public function restore(array $data): AdminResource
     {
         return DB::transaction(function () use ($data): AdminResource {
-            $admin = Admin::findOrFail($data['id'])->user->restore();
+            $admin = Admin::findOrFail($data['id']);
+            $admin->user()->withTrashed()->firstOrFail()->restore();
             return new AdminResource($admin);
         });
     }
@@ -95,7 +109,8 @@ class AdminService
     public function destroy(array $data): void 
     {
         DB::transaction(function () use ($data): void {
-            Admin::findOrFail($data['id'])->user->forceDelete();
+            $admin = Admin::findOrFail($data['id']);
+            $admin->user()->withTrashed()->firstOrFail()->forceDelete();
         });
     }
 }

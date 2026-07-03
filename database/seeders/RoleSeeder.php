@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\UserTypeEnum;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -15,7 +16,6 @@ class RoleSeeder extends Seeder
         $roleModel = config('permission.models.role');
 
         $permissions = config('permission_sync.permissions', []);
-        $roles = config('permission_sync.roles', []);
 
         foreach ($permissions as $permission) {
             $permissionModel::findOrCreate($permission);
@@ -25,16 +25,26 @@ class RoleSeeder extends Seeder
             ->pluck('name')
             ->all();
 
-        foreach ($roles as $roleName => $rolePermissions) {
-            $role = $roleModel::findOrCreate($roleName);
+        $rolePermissions = [
+            UserTypeEnum::SYS_ADMIN->value => ['*'],
 
-            if ($roleName === 'sys_admin' || $rolePermissions === ['*']) {
+            UserTypeEnum::USER->value => [
+                'users.view',
+            ],
+        ];
+
+        foreach (UserTypeEnum::cases() as $userType) {
+            $role = $roleModel::findOrCreate($userType->value);
+
+            $permissions = $rolePermissions[$userType->value] ?? [];
+
+            if ($permissions === ['*']) {
                 $role->syncPermissions($allPermissions);
 
                 continue;
             }
 
-            $role->syncPermissions($rolePermissions);
+            $role->syncPermissions($permissions);
         }
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();

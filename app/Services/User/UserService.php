@@ -17,7 +17,7 @@ class UserService
             'email' => $data['email'],
         ]);
 
-        if ($status !== Password::RESET_LINK_SENT) {
+        if ($status !== Password::ResetLinkSent) {
             throw new ApiException(__($status));
         }
     }
