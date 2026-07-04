@@ -17,10 +17,11 @@ cmd = '/assets/start.sh'
 "start.sh" = '''
 #!/bin/bash
 
-# Fix Laravel writable directory permissions
+# Ensure Laravel writable directories exist
 mkdir -p /app/storage/logs
 mkdir -p /app/bootstrap/cache
 
+# Ensure storage and bootstrap cache are writable by www-data
 chown -R www-data:www-data /app/storage /app/bootstrap/cache
 chmod -R 775 /app/storage /app/bootstrap/cache
 
@@ -56,20 +57,14 @@ serverurl=unix:///assets/supervisor.sock
 files = /etc/supervisor/conf.d/*.conf
 '''
 
-"worker-laravel.conf" = '''
-[program:worker-laravel]
+"worker-nginx.conf" = '''
+[program:worker-nginx]
 process_name=%(program_name)s_%(process_num)02d
-command=bash -c 'exec php /app/artisan queue:work --sleep=3 --tries=3 --max-time=3600'
-user=www-data
+command=nginx -c /etc/nginx.conf
 autostart=true
 autorestart=true
-stopasgroup=true
-killasgroup=true
-numprocs=2
-startsecs=0
-stopwaitsecs=3600
-stdout_logfile=/var/log/worker-laravel.log
-stderr_logfile=/var/log/worker-laravel.log
+stdout_logfile=/var/log/worker-nginx.log
+stderr_logfile=/var/log/worker-nginx.log
 '''
 
 "worker-phpfpm.conf" = '''
@@ -86,6 +81,7 @@ stderr_logfile=/var/log/worker-phpfpm.log
 [program:worker-laravel]
 process_name=%(program_name)s_%(process_num)02d
 command=bash -c 'exec php /app/artisan queue:work --sleep=3 --tries=3 --max-time=3600'
+user=www-data
 autostart=true
 autorestart=true
 stopasgroup=true
@@ -100,48 +96,60 @@ stderr_logfile=/var/log/worker-laravel.log
 "php-fpm.conf" = '''
 [www]
 listen = 127.0.0.1:9000
+
 user = www-data
 group = www-data
+
 listen.owner = www-data
 listen.group = www-data
+
 pm = dynamic
 pm.max_children = 50
 pm.min_spare_servers = 4
 pm.max_spare_servers = 32
 pm.start_servers = 18
+
 clear_env = no
+
 php_admin_value[post_max_size] = 35M
 php_admin_value[upload_max_filesize] = 30M
 '''
 
 "nginx.template.conf" = '''
 user www-data www-data;
+
 worker_processes 5;
 daemon off;
 
 worker_rlimit_nofile 8192;
 
 events {
-  worker_connections  4096;  # Default: 1024
+    worker_connections 4096;
 }
 
 http {
-    include    $!{nginx}/conf/mime.types;
-    index    index.html index.htm index.php;
+    include $!{nginx}/conf/mime.types;
+
+    index index.html index.htm index.php;
 
     default_type application/octet-stream;
-    log_format   main '$remote_addr - $remote_user [$time_local]  $status '
+
+    log_format main '$remote_addr - $remote_user [$time_local] $status '
         '"$request" $body_bytes_sent "$http_referer" '
         '"$http_user_agent" "$http_x_forwarded_for"';
+
     access_log /var/log/nginx-access.log;
     error_log /var/log/nginx-error.log;
-    sendfile     on;
-    tcp_nopush   on;
-    server_names_hash_bucket_size 128; # this seems to be required for some vhosts
+
+    sendfile on;
+    tcp_nopush on;
+
+    server_names_hash_bucket_size 128;
 
     server {
         listen ${PORT};
         listen [::]:${PORT};
+
         server_name localhost;
 
         $if(NIXPACKS_PHP_ROOT_DIR) (
@@ -153,36 +161,42 @@ http {
         add_header X-Content-Type-Options "nosniff";
 
         client_max_body_size 35M;
-     
+
         index index.php;
-     
+
         charset utf-8;
-     
 
         $if(NIXPACKS_PHP_FALLBACK_PATH) (
             location / {
                 try_files $uri $uri/ ${NIXPACKS_PHP_FALLBACK_PATH}?$query_string;
             }
         ) else (
-          location / {
+            location / {
                 try_files $uri $uri/ /index.php?$query_string;
-           }
+            }
         )
-     
-        location = /favicon.ico { access_log off; log_not_found off; }
-        location = /robots.txt  { access_log off; log_not_found off; }
-     
+
+        location = /favicon.ico {
+            access_log off;
+            log_not_found off;
+        }
+
+        location = /robots.txt {
+            access_log off;
+            log_not_found off;
+        }
+
         $if(IS_LARAVEL) (
             error_page 404 /index.php;
         ) else ()
-     
+
         location ~ \.php$ {
             fastcgi_pass 127.0.0.1:9000;
             fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
             include $!{nginx}/conf/fastcgi_params;
             include $!{nginx}/conf/fastcgi.conf;
         }
-     
+
         location ~ /\.(?!well-known).* {
             deny all;
         }
