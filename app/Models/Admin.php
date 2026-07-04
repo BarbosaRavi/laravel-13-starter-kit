@@ -19,12 +19,4 @@ class Admin extends Model
     {
         return $this->belongsTo(User::class);
     }
-
-    protected static function booted(): void
-    {
-        static::creating(function (Admin $admin): void {
-             $admin->user->user_type = UserTypeEnum::SYS_ADMIN;
-             $admin->user->assignRole(UserTypeEnum::SYS_ADMIN->value)->save();
-        });
-    }
 }

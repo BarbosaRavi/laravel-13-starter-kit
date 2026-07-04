@@ -15,15 +15,17 @@ class RoleSeeder extends Seeder
         $permissionModel = config('permission.models.permission');
         $roleModel = config('permission.models.role');
 
-        $permissions = config('permission_sync.permissions', []);
+        $permissionNames = array_keys(config('permission_sync.permissions', []));
 
-        foreach ($permissions as $permission) {
-            $permissionModel::findOrCreate($permission);
+        $guard = 'api';
+
+        foreach ($permissionNames as $permissionName) {
+            $permissionModel::findOrCreate($permissionName, $guard);
         }
 
         $allPermissions = $permissionModel::query()
-            ->pluck('name')
-            ->all();
+            ->where('guard_name', $guard)
+            ->get();
 
         $rolePermissions = [
             UserTypeEnum::SYS_ADMIN->value => ['*'],
@@ -34,7 +36,7 @@ class RoleSeeder extends Seeder
         ];
 
         foreach (UserTypeEnum::cases() as $userType) {
-            $role = $roleModel::findOrCreate($userType->value);
+            $role = $roleModel::findOrCreate($userType->value, $guard);
 
             $permissions = $rolePermissions[$userType->value] ?? [];
 
@@ -44,7 +46,12 @@ class RoleSeeder extends Seeder
                 continue;
             }
 
-            $role->syncPermissions($permissions);
+            $role->syncPermissions(
+                $permissionModel::query()
+                    ->where('guard_name', $guard)
+                    ->whereIn('name', $permissions)
+                    ->get()
+            );
         }
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();

@@ -23,13 +23,15 @@ class SyncPermissionsCommand extends Command
             $permissionModel::query()->delete();
         }
 
-        $permissions = config('permission_sync.permissions', []);
+        $guard = 'api';
+
+        $permissions = array_keys(config('permission_sync.permissions', []));
 
         foreach ($permissions as $permission) {
-            $permissionModel::findOrCreate($permission);
+            $permissionModel::findOrCreate($permission, $guard);
         }
 
-        $sysAdminRole = $roleModel::findOrCreate(UserTypeEnum::SYS_ADMIN->value);
+        $sysAdminRole = $roleModel::findOrCreate(UserTypeEnum::SYS_ADMIN->value, $guard);
 
         $sysAdminRole->syncPermissions(
             $permissionModel::query()->pluck('name')->all()

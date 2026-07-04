@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Rules\Admin\ActiveAdmin;
 use Illuminate\Foundation\Http\FormRequest;
 use Override;
 
@@ -15,7 +16,7 @@ class AdminDeleteRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id' => ['required', 'uuid', 'exists:admins,id'],
+            'id' => ['required', 'uuid', new ActiveAdmin()],
         ];
     }
 

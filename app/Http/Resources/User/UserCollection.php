@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Resources;
+namespace App\Http\Resources\User;
 
 use App\Http\Resources\User\UserResource;
 use Illuminate\Http\Request;

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
+use App\Rules\Admin\ActiveAdmin;
 use Override;
 
 class AdminShowRequest extends FormRequest
@@ -15,7 +16,7 @@ class AdminShowRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id' => ['required', 'uuid', 'exists:admins,id'],
+            'id' => ['required', 'uuid', new ActiveAdmin()],
         ];
     }
 
