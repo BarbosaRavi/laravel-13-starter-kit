@@ -17,11 +17,18 @@ cmd = '/assets/start.sh'
 "start.sh" = '''
 #!/bin/bash
 
+# Fix Laravel writable directory permissions
+mkdir -p /app/storage/logs
+mkdir -p /app/bootstrap/cache
+
+chown -R www-data:www-data /app/storage /app/bootstrap/cache
+chmod -R 775 /app/storage /app/bootstrap/cache
+
 # Transform the nginx configuration
 node /assets/scripts/prestart.mjs /assets/nginx.template.conf /etc/nginx.conf
 
 # Start supervisor
-supervisord -c /etc/supervisord.conf -n
+exec supervisord -c /etc/supervisord.conf -n
 '''
 
 "supervisord.conf" = '''
@@ -49,14 +56,20 @@ serverurl=unix:///assets/supervisor.sock
 files = /etc/supervisor/conf.d/*.conf
 '''
 
-"worker-nginx.conf" = '''
-[program:worker-nginx]
+"worker-laravel.conf" = '''
+[program:worker-laravel]
 process_name=%(program_name)s_%(process_num)02d
-command=nginx -c /etc/nginx.conf
+command=bash -c 'exec php /app/artisan queue:work --sleep=3 --tries=3 --max-time=3600'
+user=www-data
 autostart=true
 autorestart=true
-stdout_logfile=/var/log/worker-nginx.log
-stderr_logfile=/var/log/worker-nginx.log
+stopasgroup=true
+killasgroup=true
+numprocs=2
+startsecs=0
+stopwaitsecs=3600
+stdout_logfile=/var/log/worker-laravel.log
+stderr_logfile=/var/log/worker-laravel.log
 '''
 
 "worker-phpfpm.conf" = '''
