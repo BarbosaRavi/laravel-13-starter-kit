@@ -3,50 +3,47 @@
 namespace App\Services\User;
 
 use App\Exceptions\ApiException;
+use App\Jobs\SendEmailConfirmationMailJob;
+use App\Jobs\SendForgotPasswordMailJob;
 use App\Models\User;
-use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Password;
-use App\Mails\MailConfirmationMail;
-use Illuminate\Support\Facades\Mail;
+use App\Models\ForgotPassword;
 use Illuminate\Support\Str;
 
 class UserService
 {
     public function forgotPassword(array $data): void
     {
-        $status = Password::sendResetLink([
-            'email' => $data['email'],
-        ]);
+        $user = User::where('email', $data['email'])->first();
 
-        if ($status !== Password::ResetLinkSent) {
-            throw new ApiException(__($status));
+        if (!$user) {
+            return;
         }
+
+        $forgotPassword = ForgotPassword::create([
+            'user_id' => $user->id,
+            'token' => Str::uuid(),
+            'expires_at' => now()->addHours(2),
+        ]);
+        SendForgotPasswordMailJob::dispatch($user, $forgotPassword);
     }
 
     public function resetPassword(array $data): void
     {
-        $status = Password::reset(
-            [
-                'email' => $data['email'],
-                'password' => $data['password'],
-                'password_confirmation' => $data['password_confirmation'],
-                'token' => $data['token'],
-            ],
-            function (User $user, string $password): void {
-                $user->forceFill([
-                    'password' => Hash::make($password),
-                    'remember_token' => Str::random(60),
-                ])->save();
-
-                event(new PasswordReset($user)); 
-            }
-        );
-
-        if ($status !== Password::PASSWORD_RESET) {
-            throw new ApiException(__($status));
+        $forgotPassword = ForgotPassword::query()
+            ->where('token', $data['token'])
+            ->where('expires_at', '>=', now())
+            ->where('used', false)
+            ->first();
+        
+        if (!$forgotPassword) {
+            throw new ApiException('Token inválido ou expirado, solicite novamente a redefinição de senha');
         }
+
+        $user = $forgotPassword->user;
+        $user->update(['password' => Hash::make($data['password'])]);
+        $forgotPassword->update(['used' => true]);
     }
 
     public function confirmMail(array $data): void
@@ -76,13 +73,7 @@ class UserService
             ])->save();
         }
 
-        $confirmationUrl = config('app.url')
-            . '/api/user/confirm-mail?token='
-            . urlencode($user->email_confirmation_token);
-
-        Mail::to($user->email, $user->name)->queue(
-            new MailConfirmationMail($user, $confirmationUrl)
-        );
+        SendEmailConfirmationMailJob::dispatch($user->id);
     }
 
     public function resendMailConfirmation(array $data): void

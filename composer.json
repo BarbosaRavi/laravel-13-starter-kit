@@ -9,6 +9,7 @@
         "php": "^8.4",
         "ext-redis": "*",
         "laravel/framework": "^13.8",
+        "laravel/horizon": "*",
         "laravel/reverb": "^1.0",
         "laravel/tinker": "^3.0",
         "spatie/laravel-activitylog": "^5.0",
