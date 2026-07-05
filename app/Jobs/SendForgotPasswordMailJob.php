@@ -5,7 +5,6 @@ namespace App\Jobs;
 use App\Mails\MailForgotPassword;
 use App\Models\ForgotPassword;
 use App\Models\User;
-use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Mail;
