@@ -21,20 +21,20 @@ class UserController extends Controller
 
     public function updatePassword(ChangePasswordRequest $request): JsonResponse
     {
-        $admin = $this->service->changePassword($request->validated());
-        return ApiResponse::success($admin, "Senha atualizada com sucesso!", 200);
+        $this->service->changePassword($request->validated());
+        return ApiResponse::success(null, "Senha atualizada com sucesso!", 200);
     }
 
     public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
     {
-        $admin = $this->service->forgotPassword($request->validated());
-        return ApiResponse::success($admin, "Email de recuperação de senha enviado com sucesso!", 200);
+        $this->service->forgotPassword($request->validated());
+        return ApiResponse::success(null, "Email de recuperação de senha enviado com sucesso!", 200);
     }
 
     public function resetPassword(ResetPasswordRequest $request): JsonResponse
     {
-        $admin = $this->service->resetPassword($request->validated());
-        return ApiResponse::success($admin, "Senha redefinida com sucesso!", 200);
+        $this->service->resetPassword($request->validated());
+        return ApiResponse::success(null, "Senha redefinida com sucesso!", 200);
     }
 
     public function confirmMail(ConfirmMailRequest $request): JsonResponse

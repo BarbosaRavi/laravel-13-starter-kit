@@ -17,19 +17,25 @@ class AuthController extends Controller
 
     public function login(LoginRequest $request): JsonResponse
     {
-        $admin = $this->service->login($request->validated());
-        return ApiResponse::success($admin, "Usuário com sucesso!", 200);
+        $data = $this->service->login($request->validated());
+        return ApiResponse::success($data, "Usuário com sucesso!", 200);
     }
 
     public function me(): JsonResponse
     {
-        $admin = $this->service->me();
-        return ApiResponse::success($admin, "Dados do usuário", 200);
+        $data = $this->service->me();
+        return ApiResponse::success($data, "Dados do usuário", 200);
+    }
+
+    public function logout(): JsonResponse
+    {
+        $this->service->logout();
+        return ApiResponse::success(null, "Desconectado com sucesso", 200);
     }
 
     public function refreshToken(): JsonResponse
     {
-        $admin = $this->service->refreshToken();
-        return ApiResponse::success($admin, "Token atualizado com sucesso!", 200);
+        $data = $this->service->refreshToken();
+        return ApiResponse::success($data, "Token atualizado com sucesso!", 200);
     }
 }
