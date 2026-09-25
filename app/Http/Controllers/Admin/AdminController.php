@@ -23,26 +23,26 @@ class AdminController extends Controller
 
     public function index(AdminIndexRequest $request): JsonResponse
     {
-        $admin = $this->service->index($request->validated());
-        return ApiResponse::success($admin, "Administradores listados com sucesso!", 200);
+        $data = $this->service->index($request->validated());
+        return ApiResponse::success($data, "Administradores listados com sucesso!", 200);
     }
 
     public function show(AdminShowRequest $request): JsonResponse
     {
-        $admin = $this->service->show($request->validated());
-        return ApiResponse::success($admin, "Administrador visualizado com sucesso!", 200);
+        $data = $this->service->show($request->validated());
+        return ApiResponse::success($data, "Administrador visualizado com sucesso!", 200);
     }
 
     public function store(AdminStoreRequest $request): JsonResponse
     {
-        $admin = $this->service->store($request->validated());
-        return ApiResponse::success($admin, "Administrador criado com sucesso!", 200);
+        $data = $this->service->store($request->validated());
+        return ApiResponse::success($data, "Administrador criado com sucesso!", 200);
     }
 
     public function update(AdminUpdateRequest $request): JsonResponse
     {
-        $admin = $this->service->update($request->validated());
-        return ApiResponse::success($admin, "Administrador atualizado com sucesso!", 200);
+        $data = $this->service->update($request->validated());
+        return ApiResponse::success($data, "Administrador atualizado com sucesso!", 200);
     }
 
     public function delete(AdminDeleteRequest $request): JsonResponse
@@ -53,8 +53,8 @@ class AdminController extends Controller
 
     public function restore(AdminRestoreRequest $request): JsonResponse
     {
-        $admin = $this->service->restore($request->validated());
-        return ApiResponse::success($admin, "Administrador restaurado com sucesso!", 200);
+        $data = $this->service->restore($request->validated());
+        return ApiResponse::success($data, "Administrador restaurado com sucesso!", 200);
     }
 
     public function destroy(AdminDestroyRequest $request): JsonResponse

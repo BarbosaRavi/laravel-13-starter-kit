@@ -28,4 +28,13 @@ class AdminStoreRequest extends FormRequest
             'password' => 'Senha',
         ];
     }
+
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('email') && is_string($this->input('email'))) {
+            $this->merge([
+                'email' => strtolower($this->input('email')),
+            ]);
+        }
+    }
 }

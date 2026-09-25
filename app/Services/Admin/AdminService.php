@@ -8,6 +8,7 @@ use App\Http\Resources\Admin\AdminResource;
 use App\Models\Admin;
 use App\Http\Resources\Admin\AdminCollection;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
@@ -57,7 +58,7 @@ class AdminService
         return DB::transaction(function () use ($data): AdminResource {
             $user = User::create([
                 'name' => $data['name'],
-                'email' => $data['email'],
+                'email' => strtolower($data['email']),
                 'user_type' => UserTypeEnum::SYS_ADMIN,
                 'password' => Hash::make($data['password']),
             ]);
@@ -76,7 +77,7 @@ class AdminService
         return DB::transaction(function () use ($data, $admin): AdminResource {
             $updateData = [ 
                 'name' => $data['name'],
-                'email' => $data['email'],
+                'email' => strtolower($data['email']),
             ];    
         
             $admin->user->fill($updateData);
@@ -84,7 +85,7 @@ class AdminService
             if ($admin->user->isDirty('email')) {
                 $exists = User::query()
                     ->withTrashed()
-                    ->where('email', $data['email'])
+                    ->where('email', strtolower($data['email']))
                     ->exists();
 
                 if ($exists) {
@@ -98,10 +99,15 @@ class AdminService
         });
     }
 
-    public function delete(array $data): void 
+    public function delete(array $data): void
     {
         DB::transaction(function () use ($data): void {
-            Admin::findOrFail($data['id'])->user->delete();
+            $admin = Admin::findOrFail($data['id']);
+            $user = $admin->user()->withTrashed()->firstOrFail();
+
+            $this->ensureCanBeRemoved($admin, $user);
+
+            $user->delete();
         });
     }
 
@@ -115,11 +121,35 @@ class AdminService
     }
 
 
-    public function destroy(array $data): void 
+    public function destroy(array $data): void
     {
         DB::transaction(function () use ($data): void {
             $admin = Admin::findOrFail($data['id']);
-            $admin->user()->withTrashed()->firstOrFail()->forceDelete();
+            $user = $admin->user()->withTrashed()->firstOrFail();
+
+            $this->ensureCanBeRemoved($admin, $user);
+
+            $user->forceDelete();
         });
+    }
+
+    private function ensureCanBeRemoved(Admin $admin, User $user): void
+    {
+        if ($user->getKey() === Auth::id()) {
+            throw new ApiException('Você não pode excluir a si mesmo', 403);
+        }
+
+        if ($user->trashed()) {
+            return;
+        }
+
+        $existsAnother = Admin::query()
+            ->whereKeyNot($admin->getKey())
+            ->whereHas('user')
+            ->exists();
+
+        if (! $existsAnother) {
+            throw new ApiException('Não é possível deletar todos os administradores do sistema, ao menos um é necessário', 403);
+        }
     }
 }
