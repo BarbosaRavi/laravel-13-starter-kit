@@ -24,7 +24,7 @@ class ForgotPassword extends Model
 
     public function getUrlAttribute(): string
     {
-        return config('app.frontend_url') . '/reset-password?token=' . $this->token;
+        return rtrim(config('app.frontend_url'), '/').'/reset-password?token='.$this->token;
     }
 
     public function user(): BelongsTo
