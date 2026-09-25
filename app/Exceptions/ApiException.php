@@ -11,7 +11,7 @@ class ApiException extends Exception
 
     public function __construct(
         string $message = "Erro inesperado",
-        int $code = 500,
+        int $code = 400,
         public array $data = [],
         ?Throwable $previous = null
     ) {

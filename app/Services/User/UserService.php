@@ -15,7 +15,7 @@ class UserService
 {
     public function forgotPassword(array $data): void
     {
-        $user = User::where('email', $data['email'])->first();
+        $user = User::where('email', strtolower($data['email']))->first();
 
         if (!$user) {
             return;
@@ -79,7 +79,7 @@ class UserService
     public function resendMailConfirmation(array $data): void
     {
         $user = User::query()
-            ->where('email', $data['email'])
+            ->where('email', strtolower($data['email']))
             ->first();
 
         if (! $user || $user->email_verified_at !== null) {
@@ -105,7 +105,8 @@ class UserService
 
         $user->forceFill([
             'password' => Hash::make($data['password']),
-            'remember_token' => Str::random(60),
         ])->save();
+
+        Auth::logout();
     }
 }

@@ -7,6 +7,7 @@ use App\Http\Resources\User\UserResource;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Hash;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthService 
@@ -15,7 +16,7 @@ class AuthService
     {
         $user = User::where('email', $data['email'])->first();
 
-        if ($user && Auth::attempt(['email' => $data['email'], 'password' => $data['password']])) {
+        if ($user && Auth::attempt(['email' => strtolower($data['email']), 'password' => $data['password']])) {
 
             if ($user && $user->email_verified_at == null) {
                 throw new ApiException('É necessário confirmar o email antes', 403);
@@ -24,7 +25,7 @@ class AuthService
             $refreshTtlInSeconds = Config::get('jwt.refresh_ttl') * 60;
             $token = JWTAuth::fromUser($user);
 
-            $user->update(['last_login' => now()]);
+            $user->forceFill(['last_login' => now()])->save();
 
             return [
                 'user' => new UserResource($user->load(['roles.permissions'])), 
