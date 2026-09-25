@@ -4,16 +4,14 @@ namespace App\Mails;
 
 use App\Models\ForgotPassword;
 use App\Models\User;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class MailForgotPassword extends Mailable implements ShouldQueue
+class MailForgotPassword extends Mailable
 {
-    use Queueable, SerializesModels;
+    use SerializesModels;
 
     public function __construct(
         public ForgotPassword $forgotPassword, public User $user
