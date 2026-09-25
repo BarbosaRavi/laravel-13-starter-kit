@@ -1,0 +1,23 @@
+services:
+  web:
+    build: .
+    environment:
+      # Runs migrate --force and caches config/routes/views on every deploy.
+      # Only enabled here so Horizon doesn't race to migrate at the same time.
+      AUTORUN_ENABLED: "true"
+    expose:
+      - "8080"
+    restart: unless-stopped
+
+  horizon:
+    build: .
+    command: ["php", "/var/www/html/artisan", "horizon"]
+    # Horizon finishes the jobs it's running before it exits on SIGTERM
+    stop_signal: SIGTERM
+    stop_grace_period: 60s
+    healthcheck:
+      test: ["CMD", "healthcheck-horizon"]
+      start_period: 10s
+    depends_on:
+      - web
+    restart: unless-stopped
