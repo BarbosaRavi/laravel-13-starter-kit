@@ -18,6 +18,8 @@ return [
     'defaults' => [
         'guard' => env('AUTH_GUARD', 'api'),
         'passwords' => env('AUTH_PASSWORD_BROKER', 'users'),
+        'default_email' => env('AUTH_DEFAULT_EMAIL', 'admin@example.com'),
+        'default_password' => env('AUTH_DEFAULT_PASSWORD', 'password'),
     ],
 
     /*

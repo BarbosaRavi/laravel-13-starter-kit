@@ -12,15 +12,16 @@ class DefaultAdminSeeder extends Seeder
 {
     public function run(): void
     {
-        $user = User::create([
+        $user = User::firstOrCreate(
+        [
             'name' => 'admin',
-            'email' => 'admin@example.com',
+            'email' => config('auth.defaults.default_email'),
             'user_type' => UserTypeEnum::SYS_ADMIN,
-            'password' => Hash::make('default'),
+            'password' => Hash::make(config('auth.defaults.default_password')),
             'email_verified_at' => now(),
         ]);
 
-        Admin::create(['user_id' => $user->id]);
+        Admin::firstOrCreate(['user_id' => $user->id]);
         $user->assignRole(UserTypeEnum::SYS_ADMIN->value)->save();
     }
 }

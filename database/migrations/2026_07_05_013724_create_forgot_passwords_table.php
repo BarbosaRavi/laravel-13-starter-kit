@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('forgot_passwords', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('user_id')->constrained('users');
+            $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             $table->uuid('token')->unique();
             $table->dateTime('expires_at');
             $table->boolean('used')->default(false);
